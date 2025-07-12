@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
-import { fetchItemById } from '@/store/slices/itemsSlice';
+import axios from 'axios';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,19 +17,70 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// Define interfaces
+interface Image {
+  id: number;
+  image_url: string;
+  is_primary: boolean;
+  item_id: number;
+  created_at: string;
+}
+
+interface UserBasic {
+  id: number;
+  username: string;
+  profile_picture?: string;
+}
+
+interface Item {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  size: string;
+  condition: string;
+  point_value: number;
+  status: string;
+  is_approved: boolean;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  images: Image[];
+  tags: string[];
+  user: UserBasic;
+}
+
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { selectedItem, isLoading, error } = useAppSelector((state) => state.items);
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
   
   useEffect(() => {
-    if (id) {
-      dispatch(fetchItemById(parseInt(id)));
-    }
-  }, [dispatch, id]);
+    const fetchItem = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await axios.get(`http://localhost:8000/api/items/${id}`);
+        setSelectedItem(response.data);
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Failed to load item details. Please try again.');
+        console.error('Error loading item:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchItem();
+  }, [id]);
   
   if (isLoading) {
     return (
@@ -219,14 +270,24 @@ export default function ItemDetailPage() {
               <Button 
                 onClick={handleInitiateSwap} 
                 size="lg" 
-                disabled={selectedItem.user_id === user?.id}
+                disabled={isAuthenticated && selectedItem.user_id === user?.id}
               >
-                {selectedItem.user_id === user?.id ? 'Your Item' : 'Request Swap'}
+                {!isAuthenticated
+                  ? 'Login to Swap'
+                  : selectedItem.user_id === user?.id
+                  ? 'Your Item'
+                  : 'Request Swap'}
               </Button>
               
-              {selectedItem.user_id === user?.id && (
+              {isAuthenticated && selectedItem.user_id === user?.id && (
                 <div className="text-sm text-muted-foreground text-center">
                   You can't swap your own item
+                </div>
+              )}
+              
+              {!isAuthenticated && (
+                <div className="text-sm text-muted-foreground text-center">
+                  Login to request this item
                 </div>
               )}
             </div>

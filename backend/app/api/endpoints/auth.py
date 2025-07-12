@@ -118,3 +118,42 @@ async def read_users_me(
     Get current user.
     """
     return current_user
+
+@router.post("/demo-login", response_model=Token)
+async def demo_login(
+    db: AsyncSession = Depends(get_db),
+) -> Token:
+    """
+    Login with demo account credentials.
+    """
+    # Find demo user by email or create one if it doesn't exist
+    demo_email = "demo@rewear.com"
+    demo_password = "demopassword"
+    demo_username = "demouser"
+    
+    # Check if demo user exists
+    result = await db.execute(select(User).where(User.email == demo_email))
+    user = result.scalar_one_or_none()
+    
+    # Create demo user if it doesn't exist
+    if not user:
+        db_user = User(
+            email=demo_email,
+            username=demo_username,
+            password=get_password_hash(demo_password),
+            role="user",
+            points_balance=500  # Give demo user some starting points
+        )
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+        user = db_user
+    
+    # Create access token
+    access_token = create_user_token(
+        user_id=user.id,
+        username=user.username,
+        role=user.role
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}

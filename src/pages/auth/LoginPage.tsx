@@ -66,6 +66,57 @@ export default function LoginPage() {
     }));
   };
   
+  const handleDemoLogin = async () => {
+    try {
+      // Call demo login API endpoint
+      const response = await fetch('http://localhost:8000/api/auth/demo-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Demo login failed');
+      }
+      
+      const data = await response.json();
+      
+      // Store token in local storage
+      localStorage.setItem('token', data.access_token);
+      
+      // Fetch user data
+      const userResponse = await fetch('http://localhost:8000/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`
+        }
+      });
+      
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const userData = await userResponse.json();
+      
+      // Update Redux state manually
+      dispatch({
+        type: 'auth/login/fulfilled',
+        payload: {
+          token: data.access_token,
+          user: userData
+        }
+      });
+      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Demo login error:', error);
+      dispatch({
+        type: 'auth/login/rejected',
+        payload: 'Demo login failed. Please try again.'
+      });
+    }
+  };
+  
   return (
     <div className="container flex h-screen items-center justify-center">
       <Card className="w-full max-w-md">
@@ -109,6 +160,27 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
+              </Button>
+              
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-muted-foreground/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              
+              <Button 
+                type="button"
+                variant="outline" 
+                className="w-full"
+                onClick={() => handleDemoLogin()}
+                disabled={isLoading}
+              >
+                Demo Login
               </Button>
             </form>
           </Form>

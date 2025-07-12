@@ -23,6 +23,40 @@ const AppRoutes = () => {
     // Try to authenticate user on app startup if token exists
     if (localStorage.getItem('token')) {
       dispatch(getCurrentUser());
+    } else {
+      // Auto login as demo user if no token exists
+      const demoLogin = async () => {
+        try {
+          const response = await fetch('http://localhost:8000/api/auth/demo-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('token', data.access_token);
+            
+            const userResponse = await fetch('http://localhost:8000/api/auth/me', {
+              headers: { Authorization: `Bearer ${data.access_token}` }
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              dispatch({
+                type: 'auth/login/fulfilled',
+                payload: {
+                  token: data.access_token,
+                  user: userData
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Auto demo login failed:', error);
+        }
+      };
+      
+      demoLogin();
     }
   }, [dispatch]);
   

@@ -51,11 +51,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
                 Home
               </Link>
-              <Link to="/browse" className="text-sm font-medium transition-colors hover:text-primary">
+              <Link to="/items" className="text-sm font-medium transition-colors hover:text-primary">
                 Browse Items
               </Link>
               {isAuthenticated && (
-                <Link to="/add-item" className="text-sm font-medium transition-colors hover:text-primary">
+                <Link to="/items/new" className="text-sm font-medium transition-colors hover:text-primary">
                   List an Item
                 </Link>
               )}

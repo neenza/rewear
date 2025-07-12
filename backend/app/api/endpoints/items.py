@@ -94,7 +94,7 @@ async def create_item(
     
     return db_item
 
-@router.get("", response_model=List[ItemSchema])
+@router.get("", response_model=dict)
 async def get_items(
     skip: int = 0,
     limit: int = 100,
@@ -103,8 +103,7 @@ async def get_items(
     size: Optional[str] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> List[ItemSchema]:
+) -> dict:
     """
     Get all items with filtering.
     """
@@ -142,16 +141,40 @@ async def get_items(
     result = await db.execute(query)
     items = result.scalars().all()
     
-    # Cache results
-    redis_service.set(cache_key, [item for item in items], expire_seconds=300)  # 5 minutes
+    # Get total count for pagination
+    count_query = select(func.count(Item.id)).where(Item.is_approved == True, Item.status == "available")
     
-    return items
+    # Apply filters
+    if category:
+        count_query = count_query.where(Item.category == category)
+    if condition:
+        count_query = count_query.where(Item.condition == condition)
+    if size:
+        count_query = count_query.where(Item.size == size)
+    if search:
+        search_term = f"%{search}%"
+        count_query = count_query.where(
+            (Item.title.ilike(search_term)) | 
+            (Item.description.ilike(search_term))
+        )
+    
+    count_result = await db.execute(count_query)
+    total_count = count_result.scalar_one_or_none() or 0
+    
+    response = {
+        "items": items,
+        "total": total_count
+    }
+    
+    # Cache results
+    redis_service.set(cache_key, response, expire_seconds=300)  # 5 minutes
+    
+    return response
 
 @router.get("/{item_id}", response_model=ItemSchema)
 async def get_item(
     item_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> ItemSchema:
     """
     Get item by ID.
@@ -176,10 +199,8 @@ async def get_item(
             detail="Item not found",
         )
     
-    # Check if item is approved or user is the owner or admin
-    if (not item.is_approved and 
-        item.user_id != current_user.id and 
-        current_user.role != "admin"):
+    # For public access, only show approved items
+    if not item.is_approved:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item not found",

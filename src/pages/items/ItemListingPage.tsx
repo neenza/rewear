@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
+import { useAppDispatch } from '@/hooks/useRedux';
 import { fetchItems } from '@/store/slices/itemsSlice';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,60 +22,102 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
+// Define interfaces for our data
+interface Image {
+  id: number;
+  image_url: string;
+  is_primary: boolean;
+  item_id: number;
+  created_at: string;
+}
+
+interface UserBasic {
+  id: number;
+  username: string;
+  profile_picture?: string;
+}
+
+interface Item {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  size: string;
+  condition: string;
+  point_value: number;
+  status: string;
+  is_approved: boolean;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  images: Image[];
+  tags: string[];
+  user: UserBasic;
+}
+
 export default function ItemListingPage() {
   const dispatch = useAppDispatch();
-  const { items, isLoading, error, filters, pagination } = useAppSelector((state) => state.items);
-  const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
-  const [selectedCategory, setSelectedCategory] = useState(filters.category || '');
-  const [selectedSize, setSelectedSize] = useState(filters.size || '');
-  const [selectedCondition, setSelectedCondition] = useState(filters.condition || '');
+  const [items, setItems] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSize, setSelectedSize] = useState('all');
+  const [selectedCondition, setSelectedCondition] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(12);
   
   useEffect(() => {
     loadItems();
-  }, [pagination.currentPage]);
+  }, [currentPage]);
   
-  const loadItems = () => {
-    dispatch(fetchItems({
-      page: pagination.currentPage,
-      limit: pagination.limit,
-      category: selectedCategory || undefined,
-      size: selectedSize || undefined,
-      condition: selectedCondition || undefined,
-      searchTerm: searchTerm || undefined,
-    }));
+  const loadItems = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Construct query parameters
+      const params = new URLSearchParams();
+      params.append('skip', String((currentPage - 1) * itemsPerPage));
+      params.append('limit', String(itemsPerPage));
+      
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (selectedSize && selectedSize !== 'all') params.append('size', selectedSize);
+      if (selectedCondition && selectedCondition !== 'all') params.append('condition', selectedCondition);
+      if (searchTerm) params.append('search', searchTerm);
+      
+      const response = await axios.get(`http://localhost:8000/api/items?${params.toString()}`);
+      setItems(response.data.items || []);
+      setTotalPages(Math.ceil(response.data.total / itemsPerPage) || 1);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load items. Please try again.');
+      console.error('Error loading items:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleSearch = () => {
+    setCurrentPage(1); // Reset to first page when searching
     loadItems();
   };
   
   const handleFilter = () => {
+    setCurrentPage(1); // Reset to first page when filtering
     loadItems();
   };
   
   const handleNextPage = () => {
-    if (pagination.currentPage < pagination.totalPages) {
-      dispatch(fetchItems({
-        page: pagination.currentPage + 1,
-        limit: pagination.limit,
-        category: selectedCategory || undefined,
-        size: selectedSize || undefined,
-        condition: selectedCondition || undefined,
-        searchTerm: searchTerm || undefined,
-      }));
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
     }
   };
   
   const handlePrevPage = () => {
-    if (pagination.currentPage > 1) {
-      dispatch(fetchItems({
-        page: pagination.currentPage - 1,
-        limit: pagination.limit,
-        category: selectedCategory || undefined,
-        size: selectedSize || undefined,
-        condition: selectedCondition || undefined,
-        searchTerm: searchTerm || undefined,
-      }));
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
   
@@ -109,7 +152,7 @@ export default function ItemListingPage() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="tops">Tops</SelectItem>
                   <SelectItem value="bottoms">Bottoms</SelectItem>
                   <SelectItem value="dresses">Dresses</SelectItem>
@@ -130,7 +173,7 @@ export default function ItemListingPage() {
                   <SelectValue placeholder="All Sizes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sizes</SelectItem>
+                  <SelectItem value="all">All Sizes</SelectItem>
                   <SelectItem value="xs">XS</SelectItem>
                   <SelectItem value="s">S</SelectItem>
                   <SelectItem value="m">M</SelectItem>
@@ -151,7 +194,7 @@ export default function ItemListingPage() {
                   <SelectValue placeholder="Any Condition" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any Condition</SelectItem>
+                  <SelectItem value="all">Any Condition</SelectItem>
                   <SelectItem value="new">New</SelectItem>
                   <SelectItem value="like_new">Like New</SelectItem>
                   <SelectItem value="good">Good</SelectItem>
@@ -215,19 +258,19 @@ export default function ItemListingPage() {
           <div className="flex justify-between items-center mt-8">
             <Button
               onClick={handlePrevPage}
-              disabled={pagination.currentPage === 1}
+              disabled={currentPage === 1}
               variant="outline"
             >
               Previous
             </Button>
             
             <span>
-              Page {pagination.currentPage} of {pagination.totalPages}
+              Page {currentPage} of {totalPages}
             </span>
             
             <Button
               onClick={handleNextPage}
-              disabled={pagination.currentPage === pagination.totalPages}
+              disabled={currentPage === totalPages}
               variant="outline"
             >
               Next
