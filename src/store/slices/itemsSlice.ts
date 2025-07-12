@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { getLocalItems, saveLocalItem, isDemoUser } from '@/utils/localItemStorage';
 
 interface Item {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   category: string;
@@ -21,10 +22,10 @@ interface Item {
 }
 
 interface Image {
-  id: number;
+  id: number | string;
   image_url: string;
   is_primary: boolean;
-  item_id: number;
+  item_id: number | string;
   created_at: string;
 }
 

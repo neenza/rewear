@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useAppDispatch } from '@/hooks/useRedux';
+import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { fetchItems } from '@/store/slices/itemsSlice';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { getLocalItems, filterLocalItems } from '@/utils/localItemStorage';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,10 +25,10 @@ import { Badge } from '@/components/ui/badge';
 
 // Define interfaces for our data
 interface Image {
-  id: number;
+  id: number | string;
   image_url: string;
   is_primary: boolean;
-  item_id: number;
+  item_id: number | string;
   created_at: string;
 }
 
@@ -38,7 +39,7 @@ interface UserBasic {
 }
 
 interface Item {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   category: string;
@@ -58,6 +59,7 @@ interface Item {
 
 export default function ItemListingPage() {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth || { user: null });
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,14 +73,24 @@ export default function ItemListingPage() {
   
   useEffect(() => {
     loadItems();
-  }, [currentPage]);
+  }, [currentPage, selectedCategory, selectedSize, selectedCondition, searchTerm]);
   
   const loadItems = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Construct query parameters
+      // Get local items first
+      const localItems = getLocalItems();
+      const filteredLocalItems = filterLocalItems(
+        localItems,
+        selectedCategory !== 'all' ? selectedCategory : undefined,
+        selectedSize !== 'all' ? selectedSize : undefined,
+        selectedCondition !== 'all' ? selectedCondition : undefined,
+        searchTerm || undefined
+      );
+      
+      // Construct query parameters for API items
       const params = new URLSearchParams();
       params.append('skip', String((currentPage - 1) * itemsPerPage));
       params.append('limit', String(itemsPerPage));
@@ -88,18 +100,62 @@ export default function ItemListingPage() {
       if (selectedCondition && selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (searchTerm) params.append('search', searchTerm);
       
+      // Fetch items from API
       const response = await axios.get(`http://localhost:8000/api/items?${params.toString()}`);
-      // Check if response.data is an array (old format) or object with items property (new format)
+      
+      // Combine API items with local items
+      let apiItems: Item[] = [];
+      let totalApiItems = 0;
+      
       if (Array.isArray(response.data)) {
-        setItems(response.data);
-        setTotalPages(1); // Without total count info, assume 1 page
+        apiItems = response.data;
+        totalApiItems = response.data.length; // Without total count info, use length
       } else {
-        setItems(response.data.items || []);
-        setTotalPages(Math.ceil(response.data.total / itemsPerPage) || 1);
+        apiItems = response.data.items || [];
+        totalApiItems = response.data.total || 0;
       }
+      
+      // Combine and deduplicate items (prefer local items)
+      const allItems = [...filteredLocalItems as Item[]]; // Start with local items
+      
+      // Add API items that don't exist locally
+      apiItems.forEach(apiItem => {
+        // Check if this item already exists in local items (by ID)
+        const exists = allItems.some(item => item.id === apiItem.id);
+        if (!exists) {
+          allItems.push(apiItem);
+        }
+      });
+      
+      setItems(allItems);
+      setTotalPages(Math.ceil((totalApiItems + filteredLocalItems.length) / itemsPerPage) || 1);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load items. Please try again.');
-      console.error('Error loading items:', err);
+      console.error('Error loading items from API:', err);
+      
+      // If API fails, still show local items
+      try {
+        const localItems = getLocalItems();
+        const filteredLocalItems = filterLocalItems(
+          localItems,
+          selectedCategory !== 'all' ? selectedCategory : undefined,
+          selectedSize !== 'all' ? selectedSize : undefined,
+          selectedCondition !== 'all' ? selectedCondition : undefined,
+          searchTerm || undefined
+        );
+        
+        if (filteredLocalItems.length > 0) {
+          // If we have local items, show them and a warning
+          setItems(filteredLocalItems as Item[]);
+          setError('Could not connect to server. Showing locally saved items only.');
+        } else {
+          // No local items either
+          setError(err.response?.data?.detail || 'Failed to load items. Please try again.');
+        }
+      } catch (localErr) {
+        // Both API and local storage failed
+        setError('Failed to load items from server and local storage.');
+        console.error('Local storage error:', localErr);
+      }
     } finally {
       setIsLoading(false);
     }

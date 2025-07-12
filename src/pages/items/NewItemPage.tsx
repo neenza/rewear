@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { createItem } from '@/store/slices/itemsSlice';
+import { isDemoUser, saveLocalItem } from '@/utils/localItemStorage';
+import { toast } from '@/components/ui/use-toast';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -67,7 +69,7 @@ export default function NewItemPage() {
     },
   });
   
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -88,18 +90,49 @@ export default function NewItemPage() {
       ...values,
       tags,
     };
-    
-    dispatch(createItem({
-      itemData,
-      images,
-      token,
-    })).unwrap()
-      .then(() => {
-        navigate('/dashboard');
-      })
-      .catch(() => {
-        // Error is already handled in the reducer
-      });
+
+    // Check if user is demo user to use local storage
+    if (user && isDemoUser(user)) {
+      try {
+        // Save to local storage instead of backend
+        await saveLocalItem(
+          itemData as any, // Type assertion to match the required format
+          images,
+          {
+            id: user.id,
+            username: user.username || 'Demo User',
+            profile_picture: user.profile_picture
+          }
+        );
+
+        toast({
+          title: "Item created locally",
+          description: "Your item has been saved locally for demo purposes",
+        });
+        
+        navigate('/items'); // Navigate to items listing
+      } catch (error) {
+        console.error('Error saving local item:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save item locally",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Regular flow for non-demo users
+      dispatch(createItem({
+        itemData: itemData as any, // Type assertion to match the required format
+        images,
+        token,
+      })).unwrap()
+        .then(() => {
+          navigate('/dashboard');
+        })
+        .catch(() => {
+          // Error is already handled in the reducer
+        });
+    }
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
