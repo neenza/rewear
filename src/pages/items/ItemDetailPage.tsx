@@ -69,7 +69,7 @@ export default function ItemDetailPage() {
       setError(null);
       
       try {
-        const response = await axios.get(`http://localhost:8000/api/items/${id}`);
+        const response = await axios.get(`/api/items/${id}`);
         setSelectedItem(response.data);
       } catch (err: any) {
         setError(err.response?.data?.detail || 'Failed to load item details. Please try again.');

@@ -141,7 +141,7 @@ async def demo_login(
             email=demo_email,
             username=demo_username,
             password=get_password_hash(demo_password),
-            role="user",
+            role="admin",  # Make demo user admin for testing
             points_balance=500  # Give demo user some starting points
         )
         db.add(db_user)

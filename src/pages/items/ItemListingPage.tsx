@@ -88,7 +88,7 @@ export default function ItemListingPage() {
       if (selectedCondition && selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (searchTerm) params.append('search', searchTerm);
       
-      const response = await axios.get(`http://localhost:8000/api/items?${params.toString()}`);
+      const response = await axios.get(`/api/items?${params.toString()}`);
       // Check if response.data is an array (old format) or object with items property (new format)
       if (Array.isArray(response.data)) {
         setItems(response.data);

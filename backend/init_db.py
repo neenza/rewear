@@ -29,7 +29,7 @@ async def init_db():
                 email="demo@rewear.com",
                 username="demouser",
                 password=get_password_hash("demopassword"),
-                role="user",
+                role="admin",  # Make demo user admin for testing
                 points_balance=500
             )
             session.add(demo_user)

@@ -70,7 +70,7 @@ export default function LoginPage() {
   const handleDemoLogin = async () => {
     try {
       // Call demo login API endpoint using axios instead of fetch
-      const response = await axios.post('http://localhost:8000/api/auth/demo-login');
+      const response = await axios.post('/api/auth/demo-login');
       
       const data = response.data;
       const token = data.access_token;
@@ -80,7 +80,7 @@ export default function LoginPage() {
       
       try {
         // Fetch user data with proper authorization header
-        const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+        const userResponse = await axios.get('/api/auth/me', {
           headers: {
             Authorization: `Bearer ${token}`
           }

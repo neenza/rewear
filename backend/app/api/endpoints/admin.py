@@ -33,7 +33,30 @@ async def get_pending_items(
     )
     items = result.scalars().all()
     
-    return items
+    # Convert items to proper format to avoid serialization issues
+    formatted_items = []
+    for item in items:
+        item_dict = {
+            'id': item.id,
+            'title': item.title,
+            'description': item.description,
+            'category': item.category,
+            'type': item.type,
+            'size': item.size,
+            'condition': item.condition,
+            'point_value': item.point_value,
+            'user_id': item.user_id,
+            'status': item.status,
+            'is_approved': item.is_approved,
+            'created_at': item.created_at,
+            'updated_at': item.updated_at,
+            'images': item.images,
+            'tags': [tag.name for tag in item.tags] if hasattr(item, 'tags') and item.tags else [],
+            'user': item.user
+        }
+        formatted_items.append(item_dict)
+    
+    return formatted_items
 
 @router.put("/items/{item_id}/approve", response_model=ItemSchema)
 async def approve_item(
@@ -70,7 +93,27 @@ async def approve_item(
     redis_service.delete(f"items:{item_id}")
     redis_service.clear_pattern("items:all:*")
     
-    return item
+    # Convert item to proper format to avoid serialization issues
+    item_dict = {
+        'id': item.id,
+        'title': item.title,
+        'description': item.description,
+        'category': item.category,
+        'type': item.type,
+        'size': item.size,
+        'condition': item.condition,
+        'point_value': item.point_value,
+        'user_id': item.user_id,
+        'status': item.status,
+        'is_approved': item.is_approved,
+        'created_at': item.created_at,
+        'updated_at': item.updated_at,
+        'images': item.images,
+        'tags': [tag.name for tag in item.tags] if hasattr(item, 'tags') and item.tags else [],
+        'user': None
+    }
+    
+    return item_dict
 
 @router.put("/items/{item_id}/reject", status_code=status.HTTP_204_NO_CONTENT)
 async def reject_item(

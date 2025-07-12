@@ -28,14 +28,14 @@ const AppRoutes = () => {
       // Auto login as demo user if no token exists
       const demoLogin = async () => {
         try {
-          const response = await axios.post('http://localhost:8000/api/auth/demo-login');
+          const response = await axios.post('/api/auth/demo-login');
           
           if (response.status === 200) {
             const token = response.data.access_token;
             localStorage.setItem('token', token);
             
             try {
-              const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+              const userResponse = await axios.get('/api/auth/me', {
                 headers: { Authorization: `Bearer ${token}` }
               });
               

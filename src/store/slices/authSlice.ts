@@ -27,7 +27,7 @@ const initialState: AuthState = {
 };
 
 // API base URL
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 // Login user
 export const login = createAsyncThunk(

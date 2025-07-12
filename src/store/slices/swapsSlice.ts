@@ -52,7 +52,7 @@ const initialState: SwapsState = {
 };
 
 // API base URL
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 // Get all swaps (admin only)
 export const fetchAllSwaps = createAsyncThunk(
