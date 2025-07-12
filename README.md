@@ -1,3 +1,14 @@
+##Problem Statement: ReWear – Community Clothing Exchange
+# Team:
+Team leader: Vivek Varia
+Phone: +916352630074
+Email: variavivek04@gmail.com
+
+Team member 1: Neel aghera
+Phone: +91 9428232309
+Email: neel.aghera23@gmail.com
+
+
 # Welcome to your Lovable project
 
 ## Project info
