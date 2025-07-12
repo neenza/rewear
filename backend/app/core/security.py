@@ -49,8 +49,14 @@ def create_access_token(
 
 def create_user_token(user_id: int, username: str, role: str) -> str:
     """Create token with user info."""
+    # Create a properly formatted token data object
     token_data = {"user_id": user_id, "username": username, "role": role}
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Convert token_data to JSON string to ensure it's properly serialized
+    import json
+    token_data_str = json.dumps(token_data)
+    
     return create_access_token(
-        subject=token_data, expires_delta=access_token_expires
+        subject=token_data_str, expires_delta=access_token_expires
     )

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useAppDispatch } from '@/hooks/useRedux';
 import { getCurrentUser } from '@/store/slices/authSlice';
+import axios from 'axios';
 
 // Pages
 import HomePage from '@/pages/HomePage';
@@ -27,28 +28,26 @@ const AppRoutes = () => {
       // Auto login as demo user if no token exists
       const demoLogin = async () => {
         try {
-          const response = await fetch('http://localhost:8000/api/auth/demo-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
+          const response = await axios.post('http://localhost:8000/api/auth/demo-login');
           
-          if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('token', data.access_token);
+          if (response.status === 200) {
+            const token = response.data.access_token;
+            localStorage.setItem('token', token);
             
-            const userResponse = await fetch('http://localhost:8000/api/auth/me', {
-              headers: { Authorization: `Bearer ${data.access_token}` }
-            });
-            
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
+            try {
+              const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
               dispatch({
                 type: 'auth/login/fulfilled',
                 payload: {
-                  token: data.access_token,
-                  user: userData
+                  token: token,
+                  user: userResponse.data
                 }
               });
+            } catch (userError) {
+              console.error('Failed to fetch user data:', userError);
             }
           }
         } catch (error) {

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { login, clearError } from '@/store/slices/authSlice';
+import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -68,46 +69,41 @@ export default function LoginPage() {
   
   const handleDemoLogin = async () => {
     try {
-      // Call demo login API endpoint
-      const response = await fetch('http://localhost:8000/api/auth/demo-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      // Call demo login API endpoint using axios instead of fetch
+      const response = await axios.post('http://localhost:8000/api/auth/demo-login');
       
-      if (!response.ok) {
-        throw new Error('Demo login failed');
-      }
-      
-      const data = await response.json();
+      const data = response.data;
+      const token = data.access_token;
       
       // Store token in local storage
-      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('token', token);
       
-      // Fetch user data
-      const userResponse = await fetch('http://localhost:8000/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`
-        }
-      });
-      
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
+      try {
+        // Fetch user data with proper authorization header
+        const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        const userData = userResponse.data;
+        
+        // Update Redux state
+        dispatch({
+          type: 'auth/login/fulfilled',
+          payload: {
+            token: token,
+            user: userData
+          }
+        });
+        
+        navigate('/dashboard');
+      } catch (userError) {
+        console.error('Failed to fetch user data:', userError);
+        // Even if we can't get user data, still navigate to dashboard
+        // The app will try to get user data on load
+        navigate('/dashboard');
       }
-      
-      const userData = await userResponse.json();
-      
-      // Update Redux state manually
-      dispatch({
-        type: 'auth/login/fulfilled',
-        payload: {
-          token: data.access_token,
-          user: userData
-        }
-      });
-      
-      navigate('/dashboard');
     } catch (error) {
       console.error('Demo login error:', error);
       dispatch({

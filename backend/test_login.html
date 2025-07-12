@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReWear Login Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #e6ffed;
+            border-color: #34d058;
+        }
+        .error {
+            background-color: #ffeef0;
+            border-color: #d73a49;
+        }
+    </style>
+</head>
+<body>
+    <h1>ReWear Login Tester</h1>
+    
+    <div>
+        <h2>Demo Login Test</h2>
+        <button id="testDemoLogin">Test Demo Login</button>
+        <div class="result" id="demoLoginResult">Results will appear here...</div>
+    </div>
+    
+    <div>
+        <h2>User Data Test</h2>
+        <button id="testGetUserData">Test Get User Data</button>
+        <div class="result" id="userDataResult">Results will appear here...</div>
+    </div>
+    
+    <div>
+        <h2>Clear Token</h2>
+        <button id="clearToken">Clear Local Storage Token</button>
+        <div class="result" id="clearTokenResult">Results will appear here...</div>
+    </div>
+    
+    <script>
+        document.getElementById('testDemoLogin').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('demoLoginResult');
+            resultDiv.innerHTML = 'Testing demo login...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/demo-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    resultDiv.innerHTML = `
+                        <p>✅ Demo Login Successful</p>
+                        <p>Token (first 20 chars): ${data.access_token.substring(0, 20)}...</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `
+                        <p>❌ Demo Login Failed</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p>❌ Error during demo login</p>
+                    <pre>${error.message}</pre>
+                `;
+                resultDiv.className = 'result error';
+            }
+        });
+        
+        document.getElementById('testGetUserData').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('userDataResult');
+            resultDiv.innerHTML = 'Getting user data...';
+            resultDiv.className = 'result';
+            
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                resultDiv.innerHTML = `
+                    <p>❌ No token found in localStorage</p>
+                    <p>Please do demo login first</p>
+                `;
+                resultDiv.className = 'result error';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <p>✅ User Data Retrieved Successfully</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `
+                        <p>❌ Failed to get user data</p>
+                        <p>Status: ${response.status}</p>
+                        <pre>${errorText}</pre>
+                    `;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p>❌ Error getting user data</p>
+                    <pre>${error.message}</pre>
+                `;
+                resultDiv.className = 'result error';
+            }
+        });
+        
+        document.getElementById('clearToken').addEventListener('click', () => {
+            const resultDiv = document.getElementById('clearTokenResult');
+            
+            localStorage.removeItem('token');
+            
+            resultDiv.innerHTML = `
+                <p>✅ Token cleared from localStorage</p>
+            `;
+            resultDiv.className = 'result success';
+        });
+    </script>
+</body>
+</html>

@@ -89,8 +89,14 @@ export default function ItemListingPage() {
       if (searchTerm) params.append('search', searchTerm);
       
       const response = await axios.get(`http://localhost:8000/api/items?${params.toString()}`);
-      setItems(response.data.items || []);
-      setTotalPages(Math.ceil(response.data.total / itemsPerPage) || 1);
+      // Check if response.data is an array (old format) or object with items property (new format)
+      if (Array.isArray(response.data)) {
+        setItems(response.data);
+        setTotalPages(1); // Without total count info, assume 1 page
+      } else {
+        setItems(response.data.items || []);
+        setTotalPages(Math.ceil(response.data.total / itemsPerPage) || 1);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load items. Please try again.');
       console.error('Error loading items:', err);
@@ -245,6 +251,17 @@ export default function ItemListingPage() {
                     <Badge variant="secondary">{item.condition}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                  {item.user && (
+                    <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mr-1">
+                        {item.user.profile_picture ? 
+                          <img src={item.user.profile_picture} alt={item.user.username} className="w-full h-full rounded-full" /> : 
+                          <span className="text-xs">{item.user.username.charAt(0).toUpperCase()}</span>
+                        }
+                      </div>
+                      <span>{item.user.username}</span>
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter className="pt-0">
                   <div className="text-lg font-bold text-primary">{item.point_value} points</div>
