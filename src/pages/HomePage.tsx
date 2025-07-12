@@ -10,22 +10,32 @@ export default function HomePage() {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+      <section className="relative bg-gradient-warm py-24 overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5"></div>
+        <div className="absolute top-10 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl"></div>
+        
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gradient">
             Sustainable Fashion Exchange
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
             Give your clothes a second life and refresh your wardrobe through our
             community-driven fashion exchange platform.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => navigate('/items')}>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Button 
+              size="lg" 
+              className="bg-gradient-primary hover:shadow-warm-lg hover-lift text-lg px-8 py-4"
+              onClick={() => navigate('/items')}
+            >
               Browse Items
             </Button>
             <Button 
               size="lg" 
               variant="outline" 
+              className="border-2 border-primary/30 hover:bg-primary/10 hover-lift text-lg px-8 py-4"
               onClick={() => navigate(isAuthenticated ? '/items/new' : '/register')}
             >
               {isAuthenticated ? 'List an Item' : 'Join Now'}

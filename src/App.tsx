@@ -13,6 +13,7 @@ import HomePage from '@/pages/HomePage';
 import { LoginPage, RegisterPage } from '@/pages/auth';
 import { ItemListingPage, ItemDetailPage, NewItemPage } from '@/pages/items';
 import { DashboardPage } from '@/pages/dashboard';
+import { NewSwapPage } from '@/pages/swaps';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const AppRoutes = () => {
       
       {/* Auth required routes */}
       <Route path="/items/new" element={<NewItemPage />} />
+      <Route path="/swaps/new" element={<NewSwapPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/dashboard/items" element={<DashboardPage />} />
       <Route path="/dashboard/swaps" element={<DashboardPage />} />

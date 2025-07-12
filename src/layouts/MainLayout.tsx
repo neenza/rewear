@@ -41,26 +41,31 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background">
+      <header className="sticky top-0 z-40 border-b border-primary/30 bg-gradient-to-r from-primary/10 via-secondary to-primary/10 shadow-warm">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold">ReWear</span>
+              <span className="text-2xl font-bold text-gradient">ReWear</span>
             </Link>
             <nav className="hidden md:flex gap-6">
-              <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
+              <Link to="/" className="text-sm font-medium text-primary/80 transition-colors hover:text-primary hover:bg-primary/10 hover-lift px-3 py-2 rounded-md">
                 Home
               </Link>
-              <Link to="/items" className="text-sm font-medium transition-colors hover:text-primary">
+              {isAuthenticated && (
+                <Link to="/dashboard" className="text-sm font-medium text-primary/80 transition-colors hover:text-primary hover:bg-primary/10 hover-lift px-3 py-2 rounded-md">
+                  Dashboard
+                </Link>
+              )}
+              <Link to="/items" className="text-sm font-medium text-primary/80 transition-colors hover:text-primary hover:bg-primary/10 hover-lift px-3 py-2 rounded-md">
                 Browse Items
               </Link>
               {isAuthenticated && (
-                <Link to="/items/new" className="text-sm font-medium transition-colors hover:text-primary">
+                <Link to="/items/new" className="text-sm font-medium text-primary/80 transition-colors hover:text-primary hover:bg-primary/10 hover-lift px-3 py-2 rounded-md">
                   List an Item
                 </Link>
               )}
               {isAuthenticated && user?.role === 'admin' && (
-                <Link to="/admin" className="text-sm font-medium transition-colors hover:text-primary">
+                <Link to="/admin" className="text-sm font-medium text-primary/80 transition-colors hover:text-primary hover:bg-primary/10 hover-lift px-3 py-2 rounded-md">
                   Admin
                 </Link>
               )}
@@ -107,14 +112,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
-      <footer className="border-t">
+      <main className="flex-1 bg-gradient-warm">{children}</main>
+      <footer className="border-t border-primary/20 bg-gradient-to-r from-primary/10 via-secondary to-primary/10">
         <div className="container flex flex-col gap-4 py-10 md:flex-row md:justify-between">
           <div>
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold">ReWear</span>
+              <span className="text-xl font-bold text-gradient">ReWear</span>
             </Link>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-primary/70">
               Sustainable fashion exchange platform
               <br />
               &copy; {new Date().getFullYear()} ReWear. All rights reserved.
@@ -122,36 +127,36 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
-              <h4 className="text-sm font-medium">Platform</h4>
-              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+              <h4 className="text-sm font-medium text-primary">Platform</h4>
+              <Link to="/" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 Home
               </Link>
-              <Link to="/browse" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/browse" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 Browse Items
               </Link>
-              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/about" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 About Us
               </Link>
             </div>
             <div className="flex flex-col gap-2">
-              <h4 className="text-sm font-medium">Help</h4>
-              <Link to="/faq" className="text-sm text-muted-foreground hover:text-foreground">
+              <h4 className="text-sm font-medium text-primary">Help</h4>
+              <Link to="/faq" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 FAQ
               </Link>
-              <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/contact" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 Contact
               </Link>
-              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/terms" className="text-sm text-primary/70 hover:text-primary transition-colors">
                 Terms
               </Link>
             </div>
             <div className="flex flex-col gap-2">
-              <h4 className="text-sm font-medium">Social</h4>
+              <h4 className="text-sm font-medium text-primary">Social</h4>
               <a
                 href="https://twitter.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="text-sm text-primary/70 hover:text-primary transition-colors"
               >
                 Twitter
               </a>
@@ -159,7 +164,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="text-sm text-primary/70 hover:text-primary transition-colors"
               >
                 Instagram
               </a>
@@ -167,7 +172,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="text-sm text-primary/70 hover:text-primary transition-colors"
               >
                 Facebook
               </a>

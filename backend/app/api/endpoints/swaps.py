@@ -98,12 +98,82 @@ async def create_swap(
     db.add(db_swap)
     await db.commit()
     await db.refresh(db_swap)
-    
+
+    # Re-fetch provider_item and requester_item (if any) to avoid expired attributes
+    result = await db.execute(select(Item).where(Item.id == db_swap.provider_item_id))
+    provider_item_fresh = result.scalar_one_or_none()
+
+    requester_item_fresh = None
+    if db_swap.requester_item_id:
+        result = await db.execute(select(Item).where(Item.id == db_swap.requester_item_id))
+        requester_item_fresh = result.scalar_one_or_none()
+
     # Clear cache
     redis_service.clear_pattern("items:*")
     redis_service.clear_pattern("swaps:*")
+
+    # Now use provider_item_fresh and requester_item_fresh to build the response dictionary
+    swap_dict = {
+        'id': db_swap.id,
+        'requester_id': db_swap.requester_id,
+        'provider_id': db_swap.provider_id,
+        'requester_item_id': db_swap.requester_item_id,
+        'provider_item_id': db_swap.provider_item_id,
+        'points_used': db_swap.points_used,
+        'status': db_swap.status,
+        'created_at': db_swap.created_at,
+        'updated_at': db_swap.updated_at,
+        'requester_item': (
+            {
+                'id': requester_item_fresh.id,
+                'title': requester_item_fresh.title,
+                'description': requester_item_fresh.description,
+                'category': requester_item_fresh.category,
+                'type': requester_item_fresh.type,
+                'size': requester_item_fresh.size,
+                'condition': requester_item_fresh.condition,
+                'point_value': requester_item_fresh.point_value,
+                'user_id': requester_item_fresh.user_id,
+                'status': requester_item_fresh.status,
+                'is_approved': requester_item_fresh.is_approved,
+                'created_at': requester_item_fresh.created_at,
+                'updated_at': requester_item_fresh.updated_at,
+                'images': [],
+                'tags': [],
+                'user': None
+            } if requester_item_fresh else None
+        ),
+        'provider_item': {
+            'id': provider_item_fresh.id,
+            'title': provider_item_fresh.title,
+            'description': provider_item_fresh.description,
+            'category': provider_item_fresh.category,
+            'type': provider_item_fresh.type,
+            'size': provider_item_fresh.size,
+            'condition': provider_item_fresh.condition,
+            'point_value': provider_item_fresh.point_value,
+            'user_id': provider_item_fresh.user_id,
+            'status': provider_item_fresh.status,
+            'is_approved': provider_item_fresh.is_approved,
+            'created_at': provider_item_fresh.created_at,
+            'updated_at': provider_item_fresh.updated_at,
+            'images': [],
+            'tags': [],
+            'user': None
+        },
+        'requester': {
+            'id': current_user.id,
+            'username': current_user.username,
+            'profile_picture': current_user.profile_picture
+        },
+        'provider': {
+            'id': provider_item_fresh.user_id,
+            'username': 'Unknown',  # You can load username if needed
+            'profile_picture': None
+        }
+    }
     
-    return db_swap
+    return swap_dict
 
 @router.get("", response_model=List[SwapSchema])
 async def get_swaps(
@@ -136,10 +206,87 @@ async def get_swaps(
     )
     swaps = result.scalars().all()
     
-    # Cache results
-    redis_service.set(cache_key, [swap for swap in swaps], expire_seconds=300)  # 5 minutes
+    # Convert swaps to dictionaries to avoid serialization issues
+    formatted_swaps = []
+    for swap in swaps:
+        # Convert requester_item to dictionary if it exists
+        requester_item_dict = None
+        if swap.requester_item:
+            requester_item_dict = {
+                'id': swap.requester_item.id,
+                'title': swap.requester_item.title,
+                'description': swap.requester_item.description,
+                'category': swap.requester_item.category,
+                'type': swap.requester_item.type,
+                'size': swap.requester_item.size,
+                'condition': swap.requester_item.condition,
+                'point_value': swap.requester_item.point_value,
+                'user_id': swap.requester_item.user_id,
+                'status': swap.requester_item.status,
+                'is_approved': swap.requester_item.is_approved,
+                'created_at': swap.requester_item.created_at,
+                'updated_at': swap.requester_item.updated_at,
+                'images': [],
+                'tags': [],
+                'user': None
+            }
+        
+        # Convert provider_item to dictionary
+        provider_item_dict = {
+            'id': swap.provider_item.id,
+            'title': swap.provider_item.title,
+            'description': swap.provider_item.description,
+            'category': swap.provider_item.category,
+            'type': swap.provider_item.type,
+            'size': swap.provider_item.size,
+            'condition': swap.provider_item.condition,
+            'point_value': swap.provider_item.point_value,
+            'user_id': swap.provider_item.user_id,
+            'status': swap.provider_item.status,
+            'is_approved': swap.provider_item.is_approved,
+            'created_at': swap.provider_item.created_at,
+            'updated_at': swap.provider_item.updated_at,
+            'images': [],
+            'tags': [],
+            'user': None
+        }
+        
+        # Convert requester to dictionary
+        requester_dict = {
+            'id': swap.requester.id,
+            'username': swap.requester.username,
+            'profile_picture': swap.requester.profile_picture
+        }
+        
+        # Convert provider to dictionary
+        provider_dict = {
+            'id': swap.provider.id,
+            'username': swap.provider.username,
+            'profile_picture': swap.provider.profile_picture
+        }
+        
+        swap_dict = {
+            'id': swap.id,
+            'requester_id': swap.requester_id,
+            'provider_id': swap.provider_id,
+            'requester_item_id': swap.requester_item_id,
+            'provider_item_id': swap.provider_item_id,
+            'points_used': swap.points_used,
+            'status': swap.status,
+            'created_at': swap.created_at,
+            'updated_at': swap.updated_at,
+            'requester_item': requester_item_dict,
+            'provider_item': provider_item_dict,
+            'requester': requester_dict,
+            'provider': provider_dict
+        }
+        
+        formatted_swaps.append(swap_dict)
     
-    return swaps
+    # Cache results
+    redis_service.set(cache_key, formatted_swaps, expire_seconds=300)  # 5 minutes
+    
+    return formatted_swaps
 
 @router.get("/{swap_id}", response_model=SwapSchema)
 async def get_swap(
@@ -182,10 +329,83 @@ async def get_swap(
             detail="Not enough permissions",
         )
     
-    # Cache swap
-    redis_service.set(cache_key, swap, expire_seconds=300)  # 5 minutes
+    # Convert swap to dictionary to avoid serialization issues
+    # Convert requester_item to dictionary if it exists
+    requester_item_dict = None
+    if swap.requester_item:
+        requester_item_dict = {
+            'id': swap.requester_item.id,
+            'title': swap.requester_item.title,
+            'description': swap.requester_item.description,
+            'category': swap.requester_item.category,
+            'type': swap.requester_item.type,
+            'size': swap.requester_item.size,
+            'condition': swap.requester_item.condition,
+            'point_value': swap.requester_item.point_value,
+            'user_id': swap.requester_item.user_id,
+            'status': swap.requester_item.status,
+            'is_approved': swap.requester_item.is_approved,
+            'created_at': swap.requester_item.created_at,
+            'updated_at': swap.requester_item.updated_at,
+            'images': [],
+            'tags': [],
+            'user': None
+        }
     
-    return swap
+    # Convert provider_item to dictionary
+    provider_item_dict = {
+        'id': swap.provider_item.id,
+        'title': swap.provider_item.title,
+        'description': swap.provider_item.description,
+        'category': swap.provider_item.category,
+        'type': swap.provider_item.type,
+        'size': swap.provider_item.size,
+        'condition': swap.provider_item.condition,
+        'point_value': swap.provider_item.point_value,
+        'user_id': swap.provider_item.user_id,
+        'status': swap.provider_item.status,
+        'is_approved': swap.provider_item.is_approved,
+        'created_at': swap.provider_item.created_at,
+        'updated_at': swap.provider_item.updated_at,
+        'images': [],
+        'tags': [],
+        'user': None
+    }
+    
+    # Convert requester to dictionary
+    requester_dict = {
+        'id': swap.requester.id,
+        'username': swap.requester.username,
+        'profile_picture': swap.requester.profile_picture
+    }
+    
+    # Convert provider to dictionary
+    provider_dict = {
+        'id': swap.provider.id,
+        'username': swap.provider.username,
+        'profile_picture': swap.provider.profile_picture
+    }
+    
+    swap_dict = {
+        'id': swap.id,
+        'requester_id': swap.requester_id,
+        'provider_id': swap.provider_id,
+        'requester_item_id': swap.requester_item_id,
+        'provider_item_id': swap.provider_item_id,
+        'points_used': swap.points_used,
+        'status': swap.status,
+        'created_at': swap.created_at,
+        'updated_at': swap.updated_at,
+        'requester_item': requester_item_dict,
+        'provider_item': provider_item_dict,
+        'requester': requester_dict,
+        'provider': provider_dict
+    }
+    
+    # Cache swap
+    redis_service.set(cache_key, swap_dict, expire_seconds=300)  # 5 minutes
+    
+    return swap_dict
 
 @router.put("/{swap_id}", response_model=SwapSchema)
 async def update_swap(
@@ -302,4 +522,71 @@ async def update_swap(
     redis_service.clear_pattern("swaps:user:*")
     redis_service.clear_pattern("items:*")
     
-    return swap
+    # Convert swap to dictionary to avoid serialization issues
+    # Convert requester_item to dictionary if it exists
+    requester_item_dict = None
+    if swap.requester_item:
+        requester_item_dict = {
+            'id': swap.requester_item.id,
+            'title': swap.requester_item.title,
+            'description': swap.requester_item.description,
+            'category': swap.requester_item.category,
+            'type': swap.requester_item.type,
+            'size': swap.requester_item.size,
+            'condition': swap.requester_item.condition,
+            'point_value': swap.requester_item.point_value,
+            'user_id': swap.requester_item.user_id,
+            'status': swap.requester_item.status,
+            'is_approved': swap.requester_item.is_approved,
+            'created_at': swap.requester_item.created_at,
+            'updated_at': swap.requester_item.updated_at,
+            'images': [],
+            'tags': [],
+            'user': None
+        }
+    
+    # Convert provider_item to dictionary
+    provider_item_dict = {
+        'id': swap.provider_item.id,
+        'title': swap.provider_item.title,
+        'description': swap.provider_item.description,
+        'category': swap.provider_item.category,
+        'type': swap.provider_item.type,
+        'size': swap.provider_item.size,
+        'condition': swap.provider_item.condition,
+        'point_value': swap.provider_item.point_value,
+        'user_id': swap.provider_item.user_id,
+        'status': swap.provider_item.status,
+        'is_approved': swap.provider_item.is_approved,
+        'created_at': swap.provider_item.created_at,
+        'updated_at': swap.provider_item.updated_at,
+        'images': [],
+        'tags': [],
+        'user': None
+    }
+    
+    swap_dict = {
+        'id': swap.id,
+        'requester_id': swap.requester_id,
+        'provider_id': swap.provider_id,
+        'requester_item_id': swap.requester_item_id,
+        'provider_item_id': swap.provider_item_id,
+        'points_used': swap.points_used,
+        'status': swap.status,
+        'created_at': swap.created_at,
+        'updated_at': swap.updated_at,
+        'requester_item': requester_item_dict,
+        'provider_item': provider_item_dict,
+        'requester': {
+            'id': requester.id if requester else 0,
+            'username': requester.username if requester else 'Unknown',
+            'profile_picture': requester.profile_picture if requester else None
+        },
+        'provider': {
+            'id': provider.id if provider else 0,
+            'username': provider.username if provider else 'Unknown',
+            'profile_picture': provider.profile_picture if provider else None
+        }
+    }
+    
+    return swap_dict

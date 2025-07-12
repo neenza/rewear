@@ -131,7 +131,7 @@ export default function ItemListingPage() {
     <MainLayout>
       <div className="container mx-auto py-8">
         <div className="flex flex-col space-y-4 mb-8">
-          <h1 className="text-3xl font-bold">Browse Items</h1>
+          <h1 className="text-3xl font-bold text-gradient">Browse Items</h1>
           
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -233,38 +233,40 @@ export default function ItemListingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {items.map((item) => (
             <Link key={item.id} to={`/items/${item.id}`}>
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <div className="aspect-square overflow-hidden">
+              <Card className="h-full bg-gradient-card shadow-warm hover-lift border-0">
+                <div className="aspect-square overflow-hidden rounded-t-lg">
                   <img
                     src={item.images.length > 0 ? item.images.find(img => img.is_primary)?.image_url || item.images[0].image_url : 'https://via.placeholder.com/300'}
                     alt={item.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   />
                 </div>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg line-clamp-1">{item.title}</CardTitle>
+                  <CardTitle className="text-lg line-clamp-1 text-gradient">{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="pb-2">
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <Badge>{item.category}</Badge>
-                    <Badge variant="outline">{item.size}</Badge>
-                    <Badge variant="secondary">{item.condition}</Badge>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <Badge className="bg-primary/20 text-primary border-primary/30">{item.category}</Badge>
+                    <Badge variant="outline" className="border-primary/30 text-primary">{item.size}</Badge>
+                    <Badge variant="secondary" className="bg-accent/50 text-accent-foreground">{item.condition}</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{item.description}</p>
                   {item.user && (
-                    <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mr-1">
+                    <div className="mt-3 flex items-center text-sm text-muted-foreground">
+                      <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center mr-2 shadow-warm">
                         {item.user.profile_picture ? 
                           <img src={item.user.profile_picture} alt={item.user.username} className="w-full h-full rounded-full" /> : 
-                          <span className="text-xs">{item.user.username.charAt(0).toUpperCase()}</span>
+                          <span className="text-xs text-primary-foreground font-medium">{item.user.username.charAt(0).toUpperCase()}</span>
                         }
                       </div>
-                      <span>{item.user.username}</span>
+                      <span className="font-medium">{item.user.username}</span>
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="pt-0">
-                  <div className="text-lg font-bold text-primary">{item.point_value} points</div>
+                <CardFooter className="pt-2">
+                  <div className="w-full flex justify-between items-center">
+                    <span className="text-xl font-bold text-gradient">{item.point_value} points</span>
+                  </div>
                 </CardFooter>
               </Card>
             </Link>
