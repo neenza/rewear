@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.api import api_router
 from app.core.config import settings
@@ -9,6 +10,8 @@ app = FastAPI(
     description="API for the ReWear clothing exchange platform",
     version="1.0.0"
 )
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Set up CORS middleware with explicit origins
 app.add_middleware(

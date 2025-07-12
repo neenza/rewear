@@ -15,7 +15,6 @@ from app.schemas.schemas import (
     ImageCreate,
     TagCreate
 )
-from app.services.s3 import s3_service
 from app.services.redis import redis_service
 
 router = APIRouter()
@@ -76,14 +75,23 @@ async def create_item(
             )
     
     # Upload images
+    import os
+    import uuid
+    from fastapi import Request
+    STATIC_IMAGE_PATH = os.path.join(os.path.dirname(__file__), '../../static/images')
+    os.makedirs(STATIC_IMAGE_PATH, exist_ok=True)
     for i, image in enumerate(images):
         try:
-            # Upload image to S3
-            image_url = await s3_service.upload_file(image)
+            # Save image to local static directory
+            ext = os.path.splitext(image.filename)[1]
+            unique_filename = f"{uuid.uuid4().hex}{ext}"
+            file_path = os.path.join(STATIC_IMAGE_PATH, unique_filename)
+            with open(file_path, "wb") as buffer:
+                buffer.write(await image.read())
+            image_url = f"/static/images/{unique_filename}"
         except Exception as e:
-            # If S3 upload fails, use a placeholder URL for development
-            print(f"S3 upload failed: {e}")
-            image_url = f"https://via.placeholder.com/400x400?text=Image+{i+1}"
+            print(f"Local image save failed: {e}")
+            image_url = f"/static/images/placeholder.png"
         
         # Create image in database
         db_image = Image(
@@ -94,8 +102,8 @@ async def create_item(
         db.add(db_image)
     
     await db.commit()
-    
-    # Refresh the item with all relationships loaded to avoid lazy loading issues
+    # Refresh the item and its images from the database
+    await db.refresh(db_item)
     result = await db.execute(
         select(Item)
         .options(selectinload(Item.images), selectinload(Item.tags))
@@ -113,7 +121,8 @@ async def create_item(
                     'id': image.id,
                     'image_url': image.image_url,
                     'is_primary': image.is_primary,
-                    'item_id': image.item_id
+                    'item_id': image.item_id,
+                    'created_at': image.created_at
                 })
         
         # Create a copy of the item with tags as strings
@@ -200,7 +209,8 @@ async def get_items(
                     'id': image.id,
                     'image_url': image.image_url,
                     'is_primary': image.is_primary,
-                    'item_id': image.item_id
+                    'item_id': image.item_id,
+                    'created_at': image.created_at
                 })
         
         item_dict = {
@@ -293,7 +303,8 @@ async def get_my_items(
                     'id': image.id,
                     'image_url': image.image_url,
                     'is_primary': image.is_primary,
-                    'item_id': image.item_id
+                    'item_id': image.item_id,
+                    'created_at': image.created_at
                 })
         
         item_dict = {
@@ -358,9 +369,6 @@ async def get_item(
             detail="Item not found",
         )
     
-    # Cache item
-    redis_service.set(cache_key, item, expire_seconds=300)  # 5 minutes
-    
     # Convert item to proper format to avoid serialization issues
     # Convert images to dictionaries
     images_list = []
@@ -370,8 +378,23 @@ async def get_item(
                 'id': image.id,
                 'image_url': image.image_url,
                 'is_primary': image.is_primary,
-                'item_id': image.item_id
+                'item_id': image.item_id,
+                'created_at': image.created_at
             })
+    
+    # Convert user to dictionary
+    user_dict = None
+    if item.user:
+        user_dict = {
+            'id': item.user.id,
+            'email': item.user.email,
+            'username': item.user.username,
+            'profile_picture': item.user.profile_picture,
+            'points_balance': item.user.points_balance,
+            'role': item.user.role,
+            'created_at': item.user.created_at,
+            'updated_at': item.user.updated_at
+        }
     
     item_dict = {
         'id': item.id,
@@ -389,8 +412,11 @@ async def get_item(
         'updated_at': item.updated_at,
         'images': images_list,
         'tags': [tag.name for tag in item.tags] if item.tags else [],
-        'user': item.user
+        'user': user_dict
     }
+    
+    # Cache the converted item
+    redis_service.set(cache_key, item_dict, expire_seconds=300)  # 5 minutes
     
     return item_dict
 
@@ -498,8 +524,7 @@ async def delete_item(
         )
     
     # Delete images from S3
-    for image in item.images:
-        s3_service.delete_file(image.image_url)
+    # REMOVE S3 delete_file in delete_item endpoint
     
     # Delete item from database
     await db.delete(item)
