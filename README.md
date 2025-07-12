@@ -1,72 +1,33 @@
-# ReWear - Sustainable Fashion Exchange Platform
+##Problem Statement: ReWear – Community Clothing Exchange
+# Team:
+Team leader: Vivek Varia
+Phone: +916352630074
+Email: variavivek04@gmail.com
 
-ReWear is a web-based platform that enables users to exchange unused clothing through direct swaps or a point-based redemption system. The goal is to promote sustainable fashion and reduce textile waste by encouraging users to reuse wearable garments instead of discarding them.
+Team member 1: Neel aghera
+Phone: +91 9428232309
+Email: neel.aghera23@gmail.com
 
-## Project Overview
 
-### Key Features
 
-- **User Authentication**: Email/password signup and login
-- **Item Management**: Upload, browse, and swap clothing items
-- **Swap System**: Direct swaps between users or point-based redemptions
-- **Admin Moderation**: Review and approve/reject listings
-- **Real-time Updates**: Get notified of swap requests and item status changes
 
-### Tech Stack
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-- **Frontend**: React.js with TypeScript, Material-UI, Redux Toolkit
-- **Backend**: FastAPI (Python), PostgreSQL, Redis
-- **Storage**: AWS S3 for images
-- **Deployment**: Docker, GitHub Actions
+Follow these steps:
 
-## Project Structure
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-- `/backend` - FastAPI backend API
-- `/src` - React frontend application
-- `/public` - Static assets
-- `/docker-compose.yml` - Docker configuration
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-## Getting Started
+# Step 3: Install the necessary dependencies.
+npm i
 
-### Prerequisites
-
-- Node.js 18+ and npm/pnpm
-- Python 3.7+
-- PostgreSQL
-- Redis
-- Docker (optional)
-
-### Running the Application
-
-#### Development Setup
-
-1. **Clone the repository**:
-   ```sh
-   git clone https://github.com/neenza/rewear.git
-   cd rewear
-   ```
-
-2. **Set up the backend**:
-   ```sh
-   cd backend
-   python -m venv venv
-   # On Windows:
-   .\venv\Scripts\activate
-   # On Unix/Mac:
-   source venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env
-   # Configure your .env file
-   alembic upgrade head
-   uvicorn app.main:app --reload
-   ```
-
-3. **Set up the frontend**:
-   ```sh
-   cd ..  # Return to project root
-   npm install
-   npm run dev
-   ```
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
 
 4. **Access the application**:
    - Frontend: http://localhost:5173
