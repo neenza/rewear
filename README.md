@@ -1,73 +1,138 @@
-# Welcome to your Lovable project
+# ReWear - Sustainable Fashion Exchange Platform
 
-## Project info
+ReWear is a web-based platform that enables users to exchange unused clothing through direct swaps or a point-based redemption system. The goal is to promote sustainable fashion and reduce textile waste by encouraging users to reuse wearable garments instead of discarding them.
 
-**URL**: https://lovable.dev/projects/0da9f962-7b57-4c08-a9fa-11a82aeb31a8
+## Project Overview
 
-## How can I edit this code?
+### Key Features
 
-There are several ways of editing your application.
+- **User Authentication**: Email/password signup and login
+- **Item Management**: Upload, browse, and swap clothing items
+- **Swap System**: Direct swaps between users or point-based redemptions
+- **Admin Moderation**: Review and approve/reject listings
+- **Real-time Updates**: Get notified of swap requests and item status changes
 
-**Use Lovable**
+### Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0da9f962-7b57-4c08-a9fa-11a82aeb31a8) and start prompting.
+- **Frontend**: React.js with TypeScript, Material-UI, Redux Toolkit
+- **Backend**: FastAPI (Python), PostgreSQL, Redis
+- **Storage**: AWS S3 for images
+- **Deployment**: Docker, GitHub Actions
 
-Changes made via Lovable will be committed automatically to this repo.
+## Project Structure
 
-**Use your preferred IDE**
+- `/backend` - FastAPI backend API
+- `/src` - React frontend application
+- `/public` - Static assets
+- `/docker-compose.yml` - Docker configuration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js 18+ and npm/pnpm
+- Python 3.7+
+- PostgreSQL
+- Redis
+- Docker (optional)
+
+### Running the Application
+
+#### Development Setup
+
+1. **Clone the repository**:
+   ```sh
+   git clone https://github.com/neenza/rewear.git
+   cd rewear
+   ```
+
+2. **Set up the backend**:
+   ```sh
+   cd backend
+   python -m venv venv
+   # On Windows:
+   .\venv\Scripts\activate
+   # On Unix/Mac:
+   source venv/bin/activate
+   pip install -r requirements.txt
+   cp .env.example .env
+   # Configure your .env file
+   alembic upgrade head
+   uvicorn app.main:app --reload
+   ```
+
+3. **Set up the frontend**:
+   ```sh
+   cd ..  # Return to project root
+   npm install
+   npm run dev
+   ```
+
+4. **Access the application**:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+#### Using Docker
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+docker-compose up -d
+## Features in Detail
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### User Authentication
+- Email/password signup and login
+- JWT-based authentication
+- Role-based access control (user/admin)
+- Profile management
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Item Management
+- Image upload with AWS S3 storage
+- Detailed item descriptions (category, type, size, condition)
+- Tagging system for better discovery
+- Approval workflow for quality control
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Swap System
+- Direct item-for-item swaps
+- Point-based redemptions for asymmetric exchanges
+- Swap request and acceptance flow
+- Status tracking for all exchanges
 
-**Edit a file directly in GitHub**
+### Admin Features
+- Moderate and approve/reject item listings
+- Remove inappropriate or spam items
+- User management
+- Platform statistics and reports
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Technologies Used
 
-**Use GitHub Codespaces**
+### Frontend
+- **React.js** with TypeScript for type safety
+- **Material-UI/Chakra UI** for component library
+- **Redux Toolkit** for state management
+- **React Hook Form** for form handling
+- **React Router** for navigation
+- **Axios** for API communication
+- **Tailwind CSS** for styling
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Backend
+- **FastAPI** for API development
+- **PostgreSQL** for data storage
+- **SQLAlchemy** for ORM
+- **Pydantic** for data validation
+- **Redis** for caching
+- **JWT** for authentication
+- **AWS S3** for file storage
+- **Docker** for containerization
 
-## What technologies are used for this project?
+## Testing & Quality Assurance
+- End-to-end testing with **Cypress**
+- Unit testing with **Jest** and **React Testing Library**
+- Backend testing with **pytest**
+- Code linting with **ESLint** and **Flake8**
+- Type checking with TypeScript and Python type hints
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/0da9f962-7b57-4c08-a9fa-11a82aeb31a8) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Deployment Options
+- Docker Compose for local/development
+- AWS/Azure for cloud deployment
+- Vercel/Netlify for frontend hosting
+- GitHub Actions for CI/CD pipelines

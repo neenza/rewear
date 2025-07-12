@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # FastAPI backend
+  api:
+    build: ./backend
+    container_name: rewear-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - rewear-network
+
+  # React frontend
+  web:
+    build: .
+    container_name: rewear-web
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    depends_on:
+      - api
+    networks:
+      - rewear-network
+
+  # PostgreSQL database
+  db:
+    image: postgres:15
+    container_name: rewear-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rewear
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rewear-network
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: rewear-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - rewear-network
+
+networks:
+  rewear-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
