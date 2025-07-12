@@ -16,4 +16,3 @@
 ## Notes and Considerations
 
 *Last Updated: July 12, 2025*
-Hello hello
